@@ -66,6 +66,25 @@ declare class Err<T, E> implements IResult<T, E> {
   _unsafeUnwrapErr(_?: ErrorConfig): E;
 }
 
+
+declare type ExtractOkTypes<T extends readonly Result<unknown, unknown>[]> = {
+    [idx in keyof T]: T[idx] extends Result<infer U, unknown> ? U : never;
+};
+declare type ExtractOkAsyncTypes<T extends readonly ResultAsync<unknown, unknown>[]> = {
+    [idx in keyof T]: T[idx] extends ResultAsync<infer U, unknown> ? U : never;
+};
+declare type ExtractErrTypes<T extends readonly Result<unknown, unknown>[]> = {
+    [idx in keyof T]: T[idx] extends Result<unknown, infer E> ? E : never;
+};
+declare type ExtractErrAsyncTypes<T extends readonly ResultAsync<unknown, unknown>[]> = {
+    [idx in keyof T]: T[idx] extends ResultAsync<unknown, infer E> ? E : never;
+};
+
+
+declare function combine<T extends readonly Result<unknown, unknown>[]>(resultList: T): Result<ExtractOkTypes<T>, ExtractErrTypes<T>[number]>;
+declare function combine<T extends readonly ResultAsync<unknown, unknown>[]>(asyncResultList: T): ResultAsync<ExtractOkAsyncTypes<T>, ExtractErrAsyncTypes<T>[number]>;
+
+
 declare function getResult(): Result<string, Error>
 declare function getNormal(): number
 const obj: { get: () => Result<string, Error> }
@@ -85,6 +104,20 @@ new TSESLint.RuleTester({
 
       result.unwrapOr()
     `
+    ),
+    injectResult(
+      'pass results into combine',
+      `
+      const result1 = getResult()
+      const result2 = getResult()
+      const result3 = getResult()
+
+      combine([
+        result1,
+        result2,
+        result3,
+      ]).unwrapOr('')
+      `
     ),
     injectResult(
       'call unwrapOr after some methods',
